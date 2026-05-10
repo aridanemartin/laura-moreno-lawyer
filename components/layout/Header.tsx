@@ -115,6 +115,13 @@ export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [activeSection, setActiveSection] = useState<NavItem | null>(null);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragAnimating, setIsDragAnimating] = useState(false);
+
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+  const touchStartTime = useRef(0);
+  const isHorizontalDrag = useRef<boolean | null>(null);
 
   const openMobile = () => {
     setActiveSection(null);
@@ -128,6 +135,58 @@ export default function Header() {
       setIsClosing(false);
       setActiveSection(null);
     }, 300);
+  };
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    if (isClosing || isDragAnimating) return;
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    touchStartTime.current = Date.now();
+    isHorizontalDrag.current = null;
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (isClosing || isDragAnimating) return;
+    const dx = e.touches[0].clientX - touchStartX.current;
+    const dy = e.touches[0].clientY - touchStartY.current;
+
+    if (isHorizontalDrag.current === null) {
+      if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
+      isHorizontalDrag.current = Math.abs(dx) > Math.abs(dy);
+    }
+
+    if (isHorizontalDrag.current && dx > 0) {
+      e.preventDefault();
+      setDragOffset(dx);
+    }
+  };
+
+  const onTouchEnd = () => {
+    if (isClosing || isDragAnimating || isHorizontalDrag.current !== true || dragOffset === 0) {
+      setDragOffset(0);
+      return;
+    }
+
+    const velocity = dragOffset / (Date.now() - touchStartTime.current);
+    const shouldAct = dragOffset > window.innerWidth * 0.3 || velocity > 0.4;
+
+    if (shouldAct) {
+      if (activeSection) {
+        setDragOffset(0);
+        setActiveSection(null);
+      } else {
+        setIsDragAnimating(true);
+        setDragOffset(window.innerWidth);
+        setTimeout(() => {
+          setMobileOpen(false);
+          setDragOffset(0);
+          setIsDragAnimating(false);
+          setActiveSection(null);
+        }, 260);
+      }
+    } else {
+      setDragOffset(0);
+    }
   };
 
   useEffect(() => {
@@ -179,7 +238,16 @@ export default function Header() {
         <nav
           id="mobile-menu"
           aria-label="Navegación móvil"
-          className={`md:hidden fixed inset-0 z-50 bg-navy flex flex-col ${isClosing ? "animate-slide-out-right" : "animate-slide-in-right"}`}
+          className={`md:hidden fixed inset-0 z-50 bg-navy flex flex-col ${
+            isDragAnimating ? "" : isClosing ? "animate-slide-out-right" : "animate-slide-in-right"
+          }`}
+          style={dragOffset > 0 ? {
+            transform: `translateX(${dragOffset}px)`,
+            transition: isDragAnimating ? "transform 0.26s ease-out" : "none",
+          } : undefined}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
         >
           {/* Top bar */}
           <div className="flex items-center justify-between px-4 h-16 shrink-0 border-b border-white/10">
