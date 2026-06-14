@@ -1,11 +1,9 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import Link from "next/link";
-import FAQAccordion from "@/components/faq/FAQAccordion";
-import CTASection from "@/components/sections/CTASection";
 import JsonLd from "@/components/seo/JsonLd";
 import { buildBreadcrumbSchema } from "@/lib/schema";
 import { employmentDetails } from "@/lib/content/services/employment-detail";
+import ServiceDetailLayout from "@/components/services/ServiceDetailLayout";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -44,71 +42,16 @@ export default async function EmploymentServicePage({ params }: Props) {
   return (
     <>
       <JsonLd data={buildBreadcrumbSchema(breadcrumbs)} />
-
-      {/* Breadcrumb */}
-      <nav aria-label="Ruta de navegación" className="bg-ivory border-b border-ivory-dark">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-          <ol className="flex flex-wrap items-center gap-1 text-sm text-charcoal/60">
-            <li>
-              <Link href="/" className="hover:text-navy transition-colors">
-                Inicio
-              </Link>
-            </li>
-            <li aria-hidden="true" className="mx-1">›</li>
-            <li>
-              <Link
-                href="/derecho-laboral-particulares"
-                className="hover:text-navy transition-colors"
-              >
-                Derecho Laboral
-              </Link>
-            </li>
-            <li aria-hidden="true" className="mx-1">›</li>
-            <li className="text-navy font-medium">{detail.title}</li>
-          </ol>
-        </div>
-      </nav>
-
-      {/* Hero */}
-      <section className="py-16 px-4 bg-navy text-white">
-        <div className="max-w-3xl mx-auto text-center">
-          <p className="text-accent text-sm font-medium uppercase tracking-wider mb-3">
-            Derecho Laboral
-          </p>
-          <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold leading-tight">
-            {detail.title}
-          </h1>
-        </div>
-      </section>
-
-      {/* Description */}
-      <section className="py-14 px-4 bg-white">
-        <div className="max-w-3xl mx-auto space-y-5">
-          {detail.description.map((paragraph, i) => (
-            <p key={i} className="text-charcoal/80 leading-relaxed">
-              {paragraph}
-            </p>
-          ))}
-        </div>
-      </section>
-
-      {/* FAQs */}
-      <FAQAccordion faqs={detail.faqs} />
-
-      {/* Back link */}
-      <div className="py-6 px-4 bg-white text-center">
-        <Link
-          href="/derecho-laboral-particulares"
-          className="text-sm text-accent hover:underline"
-        >
-          ← Ver todos los servicios de derecho laboral
-        </Link>
-      </div>
-
-      <CTASection
-        heading="¿Tienes un asunto laboral?"
-        text="Cuéntanos tu situación y valoramos tu caso de forma personalizada."
-        ctaText="Solicita asesoramiento laboral"
+      <ServiceDetailLayout
+        detail={detail}
+        category="Derecho Laboral"
+        categoryHref="/derecho-laboral-particulares"
+        imageFolder="employment"
+        backLinkHref="/derecho-laboral-particulares"
+        backLinkText="Ver todos los servicios de derecho laboral"
+        ctaHeading="¿Tienes un asunto laboral?"
+        ctaText="Cuéntanos tu situación y valoramos tu caso de forma personalizada."
+        ctaCtaText="Solicita asesoramiento laboral"
       />
     </>
   );

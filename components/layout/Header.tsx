@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 
 type NavChild = { href: string; label: string };
-type NavItem = { href: string; label: string; children?: NavChild[] };
+type NavItem = { href: string; label: string; description?: string; children?: NavChild[] };
 
 const laboralChildren: NavChild[] = [
   { href: "/derecho-laboral-particulares/defensa-tecnica-asesoramiento", label: "Defensa técnica y asesoramiento" },
@@ -37,79 +37,21 @@ const civilChildren: NavChild[] = [
 ];
 
 const navLinks: NavItem[] = [
-  { href: "/", label: "Inicio" },
-  { href: "/derecho-laboral-particulares", label: "Derecho Laboral", children: laboralChildren },
-  { href: "/derecho-civil", label: "Derecho Civil", children: civilChildren },
+  {
+    href: "/derecho-laboral-particulares",
+    label: "Derecho Laboral",
+    description: "Asesoramiento y defensa de los derechos de los trabajadores en todas las etapas de su vida laboral.",
+    children: laboralChildren,
+  },
+  {
+    href: "/derecho-civil",
+    label: "Derecho Civil",
+    description: "Soluciones legales para asuntos de familia, herencias, tráfico, consumidores y reclamaciones civiles.",
+    children: civilChildren,
+  },
   { href: "/sobre-mi", label: "Sobre mí" },
   { href: "/contacto", label: "Contacto" },
 ];
-
-function DropdownItem({ item }: { item: NavItem }) {
-  const [open, setOpen] = useState(false);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleMouseEnter = () => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    setOpen(true);
-  };
-
-  const handleMouseLeave = () => {
-    timeoutRef.current = setTimeout(() => setOpen(false), 150);
-  };
-
-  if (!item.children) {
-    return (
-      <Link href={item.href} className="text-sm text-white/80 hover:text-white transition-colors">
-        {item.label}
-      </Link>
-    );
-  }
-
-  return (
-    <div className="relative" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-      <button
-        type="button"
-        aria-expanded={open}
-        className="flex items-center gap-1 text-sm text-white/80 hover:text-white transition-colors"
-        onClick={() => setOpen((v) => !v)}
-      >
-        {item.label}
-        <svg
-          aria-hidden="true"
-          className={`w-3 h-3 transition-transform ${open ? "rotate-180" : ""}`}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2}
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-
-      {open && (
-        <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-ivory-dark z-50 py-2">
-          <Link
-            href={item.href}
-            className="block px-4 py-2 text-xs font-semibold text-navy uppercase tracking-wide border-b border-ivory-dark mb-1 hover:bg-ivory transition-colors"
-            onClick={() => setOpen(false)}
-          >
-            Ver todos los servicios →
-          </Link>
-          {item.children.map((child) => (
-            <Link
-              key={child.href}
-              href={child.href}
-              className="block px-4 py-2 text-sm text-charcoal hover:bg-ivory hover:text-navy transition-colors"
-              onClick={() => setOpen(false)}
-            >
-              {child.label}
-            </Link>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -117,11 +59,32 @@ export default function Header() {
   const [activeSection, setActiveSection] = useState<NavItem | null>(null);
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragAnimating, setIsDragAnimating] = useState(false);
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
+  const [scrolled, setScrolled] = useState(false);
 
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
   const touchStartTime = useRef(0);
   const isHorizontalDrag = useRef<boolean | null>(null);
+
+  const openDesktopMenu = (href: string) => {
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    setActiveMenu(href);
+  };
+
+  const scheduleDesktopClose = () => {
+    closeTimerRef.current = setTimeout(() => setActiveMenu(null), 150);
+  };
+
+  const cancelDesktopClose = () => {
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+  };
+
+  const closeDesktopMenu = () => {
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    setActiveMenu(null);
+  };
 
   const openMobile = () => {
     setActiveSection(null);
@@ -194,28 +157,74 @@ export default function Header() {
     return () => { document.body.style.overflow = ""; };
   }, [mobileOpen]);
 
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 10);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    return () => { if (closeTimerRef.current) clearTimeout(closeTimerRef.current); };
+  }, []);
+
   return (
-    <header className="bg-navy text-white sticky top-0 z-50 shadow-md">
+    <header
+      className={`text-white sticky top-0 z-50 transition-[background-color,box-shadow] duration-300 ${scrolled ? "bg-navy shadow-md" : "bg-transparent shadow-none"}`}
+    >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <Link
             href="/"
             className="font-heading text-lg font-semibold tracking-wide hover:text-ivory-dark transition-colors"
+            onClick={closeDesktopMenu}
           >
             Laura Moreno Abogada
           </Link>
 
           {/* Desktop nav */}
           <nav aria-label="Navegación principal" className="hidden md:flex items-center gap-6">
-            {navLinks.map((link) => (
-              <DropdownItem key={link.href} item={link} />
-            ))}
-            <Link
-              href="/contacto"
-              className="ml-2 px-4 py-2 bg-accent text-white text-sm font-medium rounded hover:bg-accent-light transition-colors"
-            >
-              Solicita consulta
-            </Link>
+            {navLinks.map((link) => {
+              if (!link.children) {
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="nav-desktop-link text-sm font-bold uppercase text-white/80 hover:text-white transition-colors"
+                    onMouseEnter={closeDesktopMenu}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              }
+              const isOpen = activeMenu === link.href;
+              return (
+                <div
+                  key={link.href}
+                  onMouseEnter={() => openDesktopMenu(link.href)}
+                  onMouseLeave={scheduleDesktopClose}
+                >
+                  <Link
+                    href={link.href}
+                    aria-expanded={isOpen}
+                    className={`nav-desktop-link text-sm font-bold uppercase transition-colors flex items-center gap-1 ${isOpen ? "text-white nav-active" : "text-white/80 hover:text-white"}`}
+                    onClick={closeDesktopMenu}
+                  >
+                    {link.label}
+                    <svg
+                      aria-hidden="true"
+                      className={`w-3 h-3 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </Link>
+                </div>
+              );
+            })}
           </nav>
 
           {/* Mobile hamburger */}
@@ -232,6 +241,98 @@ export default function Header() {
           </button>
         </div>
       </div>
+
+      {/* Mega menu panels — one per nav item with children */}
+      {navLinks.filter((l) => l.children).map((item) => {
+        const mid = Math.ceil(item.children!.length / 2);
+        const col1 = item.children!.slice(0, mid);
+        const col2 = item.children!.slice(mid);
+        const isOpen = activeMenu === item.href;
+        return (
+          <div
+            key={item.href}
+            onMouseEnter={cancelDesktopClose}
+            onMouseLeave={scheduleDesktopClose}
+            aria-hidden={!isOpen}
+            style={{
+              position: "fixed",
+              top: "64px",
+              left: 0,
+              width: "100%",
+              zIndex: 40,
+              backgroundColor: "#f7f5f0",
+              boxShadow: "0 5px 14px rgba(0,0,0,0.16)",
+              clipPath: isOpen ? "inset(0 0 0% 0)" : "inset(0 0 100% 0)",
+              opacity: isOpen ? 1 : 0,
+              visibility: isOpen ? "visible" : "hidden",
+              transition: "clip-path 0.5s cubic-bezier(0.68,0,0,1), opacity 0.4s cubic-bezier(0.68,0,0,1), visibility 0.5s cubic-bezier(0.68,0,0,1)",
+              willChange: "clip-path, opacity",
+              pointerEvents: isOpen ? "auto" : "none",
+            }}
+          >
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex">
+              {/* Left panel */}
+              <div className="w-56 pr-8 border-r border-ivory-dark flex-shrink-0 flex flex-col justify-start">
+                <p className="font-heading text-xl font-bold text-navy mb-3">{item.label}</p>
+                <p className="text-sm text-charcoal/70 leading-relaxed mb-6">{item.description}</p>
+                <Link
+                  href={item.href}
+                  className="inline-block self-start px-4 py-2 bg-accent text-white text-xs font-medium rounded hover:bg-accent-light transition-colors"
+                  onClick={closeDesktopMenu}
+                  tabIndex={isOpen ? 0 : -1}
+                >
+                  Ver todos los servicios →
+                </Link>
+              </div>
+              {/* Link columns */}
+              <div className="flex-1 pl-10 flex gap-10">
+                <div className="flex-1">
+                  <p className="text-xs uppercase tracking-widest text-charcoal/40 font-semibold mb-4">Servicios</p>
+                  {col1.map((child) => (
+                    <Link
+                      key={child.href}
+                      href={child.href}
+                      className="block text-sm text-charcoal hover:text-navy py-1.5 border-b border-transparent hover:border-navy/20 transition-colors"
+                      onClick={closeDesktopMenu}
+                      tabIndex={isOpen ? 0 : -1}
+                    >
+                      {child.label}
+                    </Link>
+                  ))}
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs uppercase tracking-widest text-charcoal/40 font-semibold mb-4">&nbsp;</p>
+                  {col2.map((child) => (
+                    <Link
+                      key={child.href}
+                      href={child.href}
+                      className="block text-sm text-charcoal hover:text-navy py-1.5 border-b border-transparent hover:border-navy/20 transition-colors"
+                      onClick={closeDesktopMenu}
+                      tabIndex={isOpen ? 0 : -1}
+                    >
+                      {child.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+
+      {/* Nav underline animation — injected via React style hoisting */}
+      <style>{`
+        .nav-desktop-link { position: relative; padding-bottom: 3px; }
+        .nav-desktop-link::after {
+          content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+          height: 1px; background: white;
+          transform: scaleX(0); transform-origin: left;
+          transition: transform 0.2s linear;
+        }
+        .nav-desktop-link:hover::after,
+        .nav-desktop-link.nav-active::after { transform: scaleX(1); }
+        @media (max-width: 767px) { .nav-desktop-link::after { display: none; } }
+      `}</style>
 
       {/* Mobile menu — fullscreen overlay */}
       {mobileOpen && (

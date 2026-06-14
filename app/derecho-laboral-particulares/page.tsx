@@ -94,12 +94,6 @@ export default function DerechoLaboralPage() {
 
       <ProcessSteps steps={processSteps} />
 
-      <DocumentChecklist
-        heading="Documentación recomendada"
-        intro="Para una valoración más completa de tu caso, recopila, si está disponible, la siguiente documentación:"
-        items={checklistItems}
-      />
-
       <FAQAccordion faqs={employmentFaqs} />
 
       <CTASection

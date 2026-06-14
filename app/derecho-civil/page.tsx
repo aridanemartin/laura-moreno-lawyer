@@ -91,12 +91,6 @@ export default function DerechoCivilPage() {
         </div>
       </section>
 
-      <DocumentChecklist
-        heading="Documentación recomendada"
-        intro="Recopila, si está disponible, la siguiente documentación para facilitar la valoración de tu caso:"
-        items={checklistItems}
-      />
-
       <FAQAccordion faqs={civilFaqs} />
 
       <CTASection
